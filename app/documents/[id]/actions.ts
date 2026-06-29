@@ -1,13 +1,21 @@
 "use server";
 
 import { DocumentRole } from "@prisma/client";
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
-import { canManageMembers } from "@/lib/documents/permissions";
+import { canEditDocument, canManageMembers } from "@/lib/documents/permissions";
 import { getDocumentMembership } from "@/lib/documents/queries";
 import { db } from "@/lib/db";
-import { addMemberSchema, updateMemberRoleSchema } from "@/lib/validations/document";
+import { createTextPatch } from "@/lib/sync/text-operation";
+import {
+  addMemberSchema,
+  deleteDocumentSchema,
+  documentIdSchema,
+  restoreVersionSchema,
+  updateMemberRoleSchema,
+} from "@/lib/validations/document";
 
 export type AddMemberState = {
   error?: string;
@@ -86,7 +94,7 @@ export async function updateMemberRoleAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    redirect(`/documents/${formData.get("documentId")}`);
+    redirectToDocumentOrDashboard(formData.get("documentId"));
   }
 
   const membership = await getDocumentMembership(user.id, parsed.data.documentId);
@@ -118,12 +126,15 @@ export async function updateMemberRoleAction(formData: FormData) {
 
 export async function deleteDocumentAction(formData: FormData) {
   const user = await requireUser();
-  const documentId = formData.get("documentId");
+  const parsed = deleteDocumentSchema.safeParse({
+    documentId: formData.get("documentId"),
+  });
 
-  if (typeof documentId !== "string" || !documentId) {
+  if (!parsed.success) {
     redirect("/dashboard");
   }
 
+  const { documentId } = parsed.data;
   const membership = await getDocumentMembership(user.id, documentId);
 
   if (!membership || membership.role !== "OWNER") {
@@ -135,4 +146,118 @@ export async function deleteDocumentAction(formData: FormData) {
   });
 
   redirect("/dashboard");
+}
+
+export async function restoreVersionAction(formData: FormData) {
+  const user = await requireUser();
+
+  const parsed = restoreVersionSchema.safeParse({
+    documentId: formData.get("documentId"),
+    revision: formData.get("revision"),
+  });
+
+  if (!parsed.success) {
+    redirect("/dashboard");
+  }
+
+  const { documentId, revision } = parsed.data;
+
+  await db.$transaction(async (transaction) => {
+    const membership = await transaction.documentMember.findUnique({
+      where: {
+        documentId_userId: {
+          documentId,
+          userId: user.id,
+        },
+      },
+      select: {
+        role: true,
+      },
+    });
+
+    if (!membership || !canEditDocument(membership.role)) {
+      return;
+    }
+
+    const document = await transaction.document.findUnique({
+      where: { id: documentId },
+      select: {
+        id: true,
+        content: true,
+        initialContent: true,
+        revision: true,
+      },
+    });
+
+    if (!document || revision > document.revision) {
+      return;
+    }
+
+    const restoredContent =
+      revision === 0
+        ? document.initialContent
+        : (
+            await transaction.documentOperation.findUnique({
+              where: {
+                documentId_revision: {
+                  documentId,
+                  revision,
+                },
+              },
+              select: {
+                content: true,
+              },
+            })
+          )?.content;
+
+    if (typeof restoredContent !== "string") {
+      return;
+    }
+
+    const patch = createTextPatch(document.content, restoredContent);
+
+    if (!patch) {
+      return;
+    }
+
+    const nextRevision = document.revision + 1;
+
+    await transaction.document.update({
+      where: { id: documentId },
+      data: {
+        content: restoredContent,
+        revision: nextRevision,
+      },
+    });
+
+    await transaction.documentOperation.create({
+      data: {
+        id: randomUUID(),
+        documentId,
+        userId: user.id,
+        clientId: "server-version-restore",
+        baseRevision: document.revision,
+        revision: nextRevision,
+        start: patch.start,
+        deleteCount: patch.deleteCount,
+        insertText: patch.insertText,
+        content: restoredContent,
+      },
+    });
+  });
+
+  revalidatePath(`/documents/${documentId}`);
+  redirect(`/documents/${documentId}`);
+}
+
+function redirectToDocumentOrDashboard(
+  rawDocumentId: FormDataEntryValue | null,
+): never {
+  const parsed = documentIdSchema.safeParse(rawDocumentId);
+
+  if (!parsed.success) {
+    redirect("/dashboard");
+  }
+
+  redirect(`/documents/${parsed.data}`);
 }

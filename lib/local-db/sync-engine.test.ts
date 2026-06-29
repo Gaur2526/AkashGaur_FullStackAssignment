@@ -117,7 +117,7 @@ describe("syncLocalDocument", () => {
     const firstRequestStarted = new Promise<void>((resolve) => {
       firstRequestSent = resolve;
     });
-    let finishFirstRequest: ((response: Response) => void) | null = null;
+    const firstResponseReady = createDeferred<void>();
     const fetchMock = vi
       .fn()
       .mockImplementationOnce(async (_url: string, init?: RequestInit) => {
@@ -126,30 +126,25 @@ describe("syncLocalDocument", () => {
         };
 
         firstRequestSent?.();
+        await firstResponseReady.promise;
 
-        return new Promise<Response>((resolve) => {
-          finishFirstRequest = () => {
-            resolve(
-              jsonResponse({
-                document: {
-                  content: "Alpha beta",
-                  revision: 1,
-                },
-                operations: [
-                  {
-                    ...request.operations[0].patch,
-                    id: request.operations[0].id,
-                    clientId: request.operations[0].clientId,
-                    revision: 1,
-                    conflicted: false,
-                    createdAt: new Date().toISOString(),
-                  },
-                ],
-                acknowledgedOperationIds: [request.operations[0].id],
-                hasMore: false,
-              }),
-            );
-          };
+        return jsonResponse({
+          document: {
+            content: "Alpha beta",
+            revision: 1,
+          },
+          operations: [
+            {
+              ...request.operations[0].patch,
+              id: request.operations[0].id,
+              clientId: request.operations[0].clientId,
+              revision: 1,
+              conflicted: false,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+          acknowledgedOperationIds: [request.operations[0].id],
+          hasMore: false,
         });
       })
       .mockImplementationOnce(async (_url: string, init?: RequestInit) => {
@@ -185,7 +180,7 @@ describe("syncLocalDocument", () => {
     const sync = syncLocalDocument(documentId);
     await firstRequestStarted;
     await saveLocalContent(documentId, "Alpha beta gamma");
-    finishFirstRequest?.(new Response());
+    firstResponseReady.resolve();
 
     const result = await sync;
     const db = getLocalDb();
@@ -226,5 +221,17 @@ function createMemoryStorage(): Storage {
     key: (index) => [...values.keys()][index] ?? null,
     removeItem: (key) => values.delete(key),
     setItem: (key, value) => values.set(key, value),
+  };
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+
+  return {
+    promise,
+    resolve,
   };
 }

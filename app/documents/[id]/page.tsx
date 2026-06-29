@@ -6,12 +6,17 @@ import {
   canManageMembers,
   formatRole,
 } from "@/lib/documents/permissions";
-import { getDocumentMembership } from "@/lib/documents/queries";
+import {
+  getDocumentMembership,
+  getDocumentVersions,
+} from "@/lib/documents/queries";
 import { DocumentRole } from "@prisma/client";
 import { DocumentEditor } from "@/components/documents/document-editor";
 import { AddMemberForm } from "./add-member-form";
+import { AiAssistant } from "./ai-assistant";
 import { deleteDocumentAction } from "./actions";
 import { MemberRoleForm } from "./member-role-form";
+import { VersionHistory } from "./version-history";
 
 type DocumentPageProps = {
   params: Promise<{ id: string }>;
@@ -30,6 +35,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
   const { document } = membership;
   const userCanEdit = canEditDocument(membership.role);
   const userCanManageMembers = canManageMembers(membership.role);
+  const versions = await getDocumentVersions(user.id, id);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-12 sm:px-6">
@@ -88,6 +94,8 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
         </section>
 
         <aside className="space-y-6">
+          <AiAssistant documentId={document.id} canEdit={userCanEdit} />
+
           <section className="rounded-lg border border-zinc-200 bg-white p-6">
             <h2 className="text-sm font-medium text-zinc-900">Members</h2>
             <ul className="mt-3 space-y-4">
@@ -127,6 +135,12 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
               </div>
             </section>
           ) : null}
+
+          <VersionHistory
+            documentId={document.id}
+            role={membership.role}
+            versions={versions}
+          />
         </aside>
       </div>
     </div>

@@ -92,12 +92,51 @@ Open [http://localhost:3000](http://localhost:3000).
 - Failed operations retry with bounded exponential backoff
 - Sync requests and documents have strict size limits
 
+## Version history (Module 7)
+
+- Every successful synced operation stores the authoritative document content for that revision
+- The document page shows a version timeline with revision, author, timestamp, size, and conflict metadata
+- Owners and editors can restore an older revision
+- Restores are saved as new document operations, so other clients receive them through normal sync
+
+## Security hardening (Module 8)
+
+- Document and member IDs are validated as CUIDs before database writes
+- Server actions avoid redirects based on untrusted raw form values
+- Sync requests require `application/json`, enforce payload limits, and validate the route document ID
+- Document restore, delete, sharing, and sync operations all re-check membership and role permissions on the server
+
+## AI assistant (Module 9)
+
+- Document pages include an assistant for summarize, improve writing, and rewrite actions
+- The AI API reuses existing document membership checks; viewers can summarize only
+- `OPENAI_API_KEY` enables OpenAI-backed suggestions, while empty keys use deterministic local fallback output
+- AI suggestions are shown separately and are not auto-applied, keeping local/offline sync behavior predictable
+
+## Deployment readiness (Module 10)
+
+- The auth gate uses the Next.js 16 `proxy.ts` convention instead of deprecated middleware
+- Required production environment variables: `DATABASE_URL`, `AUTH_SECRET`, and `AUTH_URL`
+- Optional production environment variables: `OPENAI_API_KEY` and `OPENAI_MODEL`
+- Run production migrations with `npm run db:deploy`
+- Verify a release with:
+
+```bash
+npm test
+npm run lint
+npx tsc --noEmit
+npm run build
+```
+
+Before deploying, confirm the production database is reachable from the hosting provider and `AUTH_URL` matches the public domain exactly.
+
 ## Database scripts
 
 | Command | Description |
 |---------|-------------|
 | `npm run db:generate` | Generate Prisma client |
 | `npm run db:migrate` | Run migrations in development |
+| `npm run db:deploy` | Apply committed migrations in production |
 | `npm run db:push` | Push schema without migration files |
 | `npm run db:studio` | Open Prisma Studio |
 

@@ -4,6 +4,7 @@ import {
   MAX_SYNC_PAYLOAD_BYTES,
 } from "@/lib/validations/sync";
 import { syncDocument, SyncServerError } from "@/lib/sync/server";
+import { documentIdSchema } from "@/lib/validations/document";
 
 type SyncRouteContext = {
   params: Promise<{ id: string }>;
@@ -12,6 +13,22 @@ type SyncRouteContext = {
 class PayloadTooLargeError extends Error {}
 
 export async function POST(request: Request, context: SyncRouteContext) {
+  const { id } = await context.params;
+  const parsedDocumentId = documentIdSchema.safeParse(id);
+
+  if (!parsedDocumentId.success) {
+    return Response.json({ error: "Invalid document id" }, { status: 400 });
+  }
+
+  const contentType = request.headers.get("content-type");
+
+  if (!contentType?.toLowerCase().includes("application/json")) {
+    return Response.json(
+      { error: "Content-Type must be application/json" },
+      { status: 415 },
+    );
+  }
+
   const declaredLength = Number(request.headers.get("content-length"));
 
   if (
@@ -51,11 +68,9 @@ export async function POST(request: Request, context: SyncRouteContext) {
     return Response.json({ error: "Invalid sync payload" }, { status: 400 });
   }
 
-  const { id: documentId } = await context.params;
-
   try {
     const result = await syncDocument({
-      documentId,
+      documentId: parsedDocumentId.data,
       userId: session.user.id,
       ...parsed.data,
     });

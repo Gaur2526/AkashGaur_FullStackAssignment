@@ -57,3 +57,70 @@ export async function getDocumentMembership(userId: string, documentId: string) 
     },
   });
 }
+
+export async function getDocumentVersions(userId: string, documentId: string) {
+  const membership = await db.documentMember.findUnique({
+    where: {
+      documentId_userId: {
+        documentId,
+        userId,
+      },
+    },
+    select: {
+      document: {
+        select: {
+          id: true,
+          initialContent: true,
+          revision: true,
+          createdAt: true,
+          operations: {
+            orderBy: {
+              revision: "desc",
+            },
+            take: 20,
+            select: {
+              id: true,
+              revision: true,
+              content: true,
+              conflicted: true,
+              createdAt: true,
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!membership) {
+    return [];
+  }
+
+  const { document } = membership;
+
+  return [
+    ...document.operations.map((operation) => ({
+      id: operation.id,
+      revision: operation.revision,
+      createdAt: operation.createdAt,
+      author: operation.user.name ?? operation.user.email,
+      contentLength: operation.content.length,
+      conflicted: operation.conflicted,
+      isCurrent: operation.revision === document.revision,
+    })),
+    {
+      id: `${document.id}:initial`,
+      revision: 0,
+      createdAt: document.createdAt,
+      author: "Initial document",
+      contentLength: document.initialContent.length,
+      conflicted: false,
+      isCurrent: document.revision === 0,
+    },
+  ];
+}
