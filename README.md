@@ -116,7 +116,9 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Deployment readiness (Module 10)
 
 - The auth gate uses the Next.js 16 `proxy.ts` convention instead of deprecated middleware
-- Required production environment variables: `DATABASE_URL`, `AUTH_SECRET`, and `AUTH_URL`
+- Required production environment variables: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, and `AUTH_URL`
+- For Supabase on Vercel, use the transaction pooler on port `6543` for `DATABASE_URL` and include `pgbouncer=true`
+- For Prisma migrations, use a direct connection or session pooler on port `5432` for `DIRECT_URL`
 - Optional production environment variables: `OPENAI_API_KEY` and `OPENAI_MODEL`
 - Run production migrations with `npm run db:deploy`
 - Verify a release with:
@@ -129,6 +131,20 @@ npm run build
 ```
 
 Before deploying, confirm the production database is reachable from the hosting provider and `AUTH_URL` matches the public domain exactly.
+
+Supabase production connection example:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:5432/postgres"
+AUTH_URL="https://your-project.vercel.app"
+```
+
+If your `DATABASE_URL` already contains a query string such as `?sslmode=require`, add `pgbouncer=true` with `&`:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true"
+```
 
 ## Database scripts
 
