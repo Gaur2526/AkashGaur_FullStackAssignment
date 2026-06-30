@@ -11,7 +11,7 @@ async function SignOutButton() {
     >
       <button
         type="submit"
-        className="text-sm text-zinc-600 hover:text-zinc-900"
+        className="rounded-full px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-950"
       >
         Sign out
       </button>
@@ -25,12 +25,15 @@ export async function AuthNav() {
   if (!session?.user) {
     return (
       <nav className="flex items-center gap-3">
-        <Link href="/login" className="text-sm text-zinc-600 hover:text-zinc-900">
+        <Link
+          href="/login"
+          className="rounded-full px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-950"
+        >
           Log in
         </Link>
         <Link
           href="/register"
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700"
+          className="rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-zinc-800 hover:shadow-md"
         >
           Sign up
         </Link>
@@ -43,7 +46,10 @@ export async function AuthNav() {
       <span className="hidden text-sm text-zinc-600 sm:inline">
         {session.user.email}
       </span>
-      <Link href="/dashboard" className="text-sm text-zinc-600 hover:text-zinc-900">
+      <Link
+        href="/dashboard"
+        className="rounded-full px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-950"
+      >
         Dashboard
       </Link>
       <SignOutButton />
