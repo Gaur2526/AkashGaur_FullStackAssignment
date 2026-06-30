@@ -77,7 +77,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
           <h2 className="text-sm font-medium text-zinc-900">Content</h2>
           {userCanEdit ? (
             <p className="mt-2 text-sm text-zinc-600">
-              Edits save to IndexedDB instantly. Server sync arrives in Module 6.
+              Edits save locally first, then sync to the server in the background.
             </p>
           ) : (
             <p className="mt-2 text-sm text-amber-700">
