@@ -13,6 +13,7 @@ type DocumentEditorProps = {
   serverTitle: string;
   serverContent: string;
   serverRevision: number;
+  currentUserLabel: string;
   canEdit: boolean;
 };
 
@@ -24,6 +25,7 @@ export function DocumentEditor({
   serverTitle,
   serverContent,
   serverRevision,
+  currentUserLabel,
   canEdit,
 }: DocumentEditorProps) {
   const [content, setContent] = useState(serverContent);
@@ -206,6 +208,16 @@ export function DocumentEditor({
     persistLocally(content, editVersion.current);
   };
 
+  const insertAuthorPrefix = () => {
+    const prefix = `${currentUserLabel}: `;
+    const needsNewLine = content.length > 0 && !content.endsWith("\n");
+    const nextContent = `${content}${needsNewLine ? "\n" : ""}${prefix}`;
+
+    editVersion.current += 1;
+    setContent(nextContent);
+    setSaveStatus("pending");
+  };
+
   const saveStatusText = {
     saved: lastSavedAt
       ? `Saved locally${lastSavedAt ? ` · ${new Date(lastSavedAt).toLocaleTimeString()}` : ""}`
@@ -291,6 +303,13 @@ export function DocumentEditor({
           >
             Save now
           </button>
+          <button
+            type="button"
+            onClick={insertAuthorPrefix}
+            className="rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50"
+          >
+            Add my name
+          </button>
         </div>
       </div>
 
@@ -302,12 +321,13 @@ export function DocumentEditor({
           setSaveStatus("pending");
         }}
         rows={16}
-        placeholder="Start typing..."
+        placeholder={`Start typing, or click "Add my name" to write as ${currentUserLabel}...`}
         aria-describedby="local-save-status sync-status"
         className="w-full resize-y rounded-md border border-zinc-300 bg-white px-3 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20"
       />
       <p className="text-xs text-zinc-400">
-        Press Ctrl/Cmd + S to save immediately.
+        Press Ctrl/Cmd + S to save immediately. Use “Add my name” for
+        chat-style notes like “{currentUserLabel}: hello”.
       </p>
     </div>
   );

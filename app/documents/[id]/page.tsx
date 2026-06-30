@@ -35,6 +35,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
   const { document } = membership;
   const userCanEdit = canEditDocument(membership.role);
   const userCanManageMembers = canManageMembers(membership.role);
+  const currentUserLabel = user.name ?? user.email ?? "Me";
   const versions = await getDocumentVersions(user.id, id);
 
   return (
@@ -89,6 +90,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
             serverTitle={document.title}
             serverContent={document.content}
             serverRevision={document.revision}
+            currentUserLabel={currentUserLabel}
             canEdit={userCanEdit}
           />
         </section>
