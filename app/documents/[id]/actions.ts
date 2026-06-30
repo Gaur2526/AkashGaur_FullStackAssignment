@@ -22,6 +22,11 @@ export type AddMemberState = {
   success?: string;
 };
 
+export type UpdateMemberRoleState = {
+  error?: string;
+  success?: string;
+};
+
 export async function addMemberAction(
   _prevState: AddMemberState,
   formData: FormData,
@@ -122,6 +127,56 @@ export async function updateMemberRoleAction(formData: FormData) {
 
   revalidatePath(`/documents/${parsed.data.documentId}`);
   redirect(`/documents/${parsed.data.documentId}`);
+}
+
+export async function updateMemberRoleStateAction(
+  _prevState: UpdateMemberRoleState,
+  formData: FormData,
+): Promise<UpdateMemberRoleState> {
+  const user = await requireUser();
+
+  const parsed = updateMemberRoleSchema.safeParse({
+    documentId: formData.get("documentId"),
+    memberId: formData.get("memberId"),
+    role: formData.get("role"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const membership = await getDocumentMembership(user.id, parsed.data.documentId);
+
+  if (!membership || !canManageMembers(membership.role)) {
+    return { error: "Only the document owner can change member roles" };
+  }
+
+  const targetMember = await db.documentMember.findFirst({
+    where: {
+      id: parsed.data.memberId,
+      documentId: parsed.data.documentId,
+      role: { not: DocumentRole.OWNER },
+    },
+    select: {
+      id: true,
+      role: true,
+    },
+  });
+
+  if (!targetMember) {
+    return { error: "Member not found" };
+  }
+
+  if (targetMember.role !== parsed.data.role) {
+    await db.documentMember.update({
+      where: { id: targetMember.id },
+      data: { role: parsed.data.role },
+    });
+  }
+
+  revalidatePath(`/documents/${parsed.data.documentId}`);
+
+  return { success: `Role updated to ${parsed.data.role.toLowerCase()}.` };
 }
 
 export async function deleteDocumentAction(formData: FormData) {

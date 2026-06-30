@@ -11,6 +11,8 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is not set. Copy .env.example to .env and configure it.");
 }
 
+const cliDatabaseUrl = directUrl ?? databaseUrl;
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -18,7 +20,6 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: databaseUrl,
-    directUrl,
+    url: cliDatabaseUrl,
   },
 });
