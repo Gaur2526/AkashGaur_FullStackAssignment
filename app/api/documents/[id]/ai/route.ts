@@ -66,7 +66,7 @@ export async function POST(request: Request, context: AiRouteContext) {
   }
 
   try {
-    const suggestion = await generateDocumentSuggestion({
+    const result = await generateDocumentSuggestion({
       action: parsed.data.action,
       title: membership.document.title,
       content: membership.document.content,
@@ -75,8 +75,8 @@ export async function POST(request: Request, context: AiRouteContext) {
     return Response.json(
       {
         action: parsed.data.action,
-        suggestion,
-        provider: process.env.OPENAI_API_KEY ? "openai" : "local",
+        suggestion: result.suggestion,
+        provider: result.provider,
       },
       {
         headers: {
