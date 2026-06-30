@@ -110,7 +110,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 - Document pages include an assistant for summarize, improve writing, and rewrite actions
 - The AI API reuses existing document membership checks; viewers can summarize only
-- `OPENAI_API_KEY` enables OpenAI-backed suggestions, while empty keys use deterministic local fallback output
+- `GEMINI_API_KEY` enables Gemini-backed suggestions, while empty keys use deterministic local fallback output
 - AI suggestions are shown separately and are not auto-applied, keeping local/offline sync behavior predictable
 
 ## Deployment readiness (Module 10)
@@ -119,7 +119,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - Required production environment variables: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, and `AUTH_URL`
 - For Supabase on Vercel, use the transaction pooler on port `6543` for `DATABASE_URL` and include `pgbouncer=true`
 - For Prisma migrations, use a direct connection or session pooler on port `5432` for `DIRECT_URL`
-- Optional production environment variables: `OPENAI_API_KEY` and `OPENAI_MODEL`
+- Optional production environment variables: `GEMINI_API_KEY` and `GEMINI_MODEL`
 - Run production migrations with `npm run db:deploy`
 - Verify a release with:
 

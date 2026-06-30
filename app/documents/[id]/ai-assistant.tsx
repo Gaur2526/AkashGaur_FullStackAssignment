@@ -11,7 +11,7 @@ type AiAssistantProps = {
 type AiResponse = {
   action: AiAction;
   suggestion: string;
-  provider: "openai" | "local";
+  provider: "gemini" | "local";
 };
 
 type AiOption = {
@@ -129,7 +129,7 @@ export function AiAssistant({ documentId, canEdit }: AiAssistantProps) {
               {result.action}
             </p>
             <span className="rounded-full bg-white px-2 py-0.5 text-xs text-zinc-500">
-              {result.provider === "openai" ? "OpenAI" : "Local fallback"}
+              {result.provider === "gemini" ? "Gemini" : "Local fallback"}
             </span>
           </div>
           <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-6 text-zinc-800">

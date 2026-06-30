@@ -27,6 +27,11 @@ export type UpdateMemberRoleState = {
   success?: string;
 };
 
+export type DeleteDocumentState = {
+  error?: string;
+  success?: boolean;
+};
+
 export async function addMemberAction(
   _prevState: AddMemberState,
   formData: FormData,
@@ -201,6 +206,35 @@ export async function deleteDocumentAction(formData: FormData) {
   });
 
   redirect("/dashboard");
+}
+
+export async function deleteDocumentStateAction(
+  _prevState: DeleteDocumentState,
+  formData: FormData,
+): Promise<DeleteDocumentState> {
+  const user = await requireUser();
+  const parsed = deleteDocumentSchema.safeParse({
+    documentId: formData.get("documentId"),
+  });
+
+  if (!parsed.success) {
+    return { error: "Invalid document id" };
+  }
+
+  const { documentId } = parsed.data;
+  const membership = await getDocumentMembership(user.id, documentId);
+
+  if (!membership || membership.role !== "OWNER") {
+    return { error: "Only the document owner can delete this document" };
+  }
+
+  await db.document.delete({
+    where: { id: documentId },
+  });
+
+  revalidatePath("/dashboard");
+
+  return { success: true };
 }
 
 export async function restoreVersionAction(formData: FormData) {

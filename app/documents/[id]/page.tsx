@@ -14,7 +14,7 @@ import { DocumentRole } from "@prisma/client";
 import { DocumentEditor } from "@/components/documents/document-editor";
 import { AddMemberForm } from "./add-member-form";
 import { AiAssistant } from "./ai-assistant";
-import { deleteDocumentAction } from "./actions";
+import { DeleteDocumentForm } from "./delete-document-form";
 import { MemberRoleForm } from "./member-role-form";
 import { VersionHistory } from "./version-history";
 
@@ -61,15 +61,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
         </div>
 
         {userCanManageMembers ? (
-          <form action={deleteDocumentAction}>
-            <input type="hidden" name="documentId" value={document.id} />
-            <button
-              type="submit"
-              className="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
-            >
-              Delete document
-            </button>
-          </form>
+          <DeleteDocumentForm documentId={document.id} />
         ) : null}
       </div>
 
