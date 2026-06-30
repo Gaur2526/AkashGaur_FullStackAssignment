@@ -105,6 +105,24 @@ describe("syncLocalDocument", () => {
     expect(operation?.nextRetryAt).toBeGreaterThan(Date.now());
   });
 
+  it("reports when the document is no longer available", async () => {
+    await loadOrSeedDocument(documentId, {
+      title: "Planning Notes",
+      content: "Draft",
+      revision: 0,
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({ error: "Document not found" }, 404)),
+    );
+
+    const result = await syncLocalDocument(documentId);
+
+    expect(result.state).toBe("error");
+    expect(result.unavailable).toBe(true);
+  });
+
   it("rebases an edit made while the previous sync request is in flight", async () => {
     await loadOrSeedDocument(documentId, {
       title: "Planning Notes",

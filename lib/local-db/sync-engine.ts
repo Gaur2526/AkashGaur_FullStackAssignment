@@ -12,6 +12,7 @@ export type LocalSyncResult = {
   document: LocalDocument | null;
   state: "synced" | "pending" | "error";
   conflicted: boolean;
+  unavailable: boolean;
 };
 
 const activeSyncs = new Map<string, Promise<LocalSyncResult>>();
@@ -42,6 +43,7 @@ async function performSync(documentId: string): Promise<LocalSyncResult> {
       document: null,
       state: "error",
       conflicted: false,
+      unavailable: false,
     };
   }
 
@@ -50,6 +52,7 @@ async function performSync(documentId: string): Promise<LocalSyncResult> {
       document: (await db.documents.get(documentId)) ?? null,
       state: "pending",
       conflicted: false,
+      unavailable: false,
     };
   }
 
@@ -63,6 +66,7 @@ async function performSync(documentId: string): Promise<LocalSyncResult> {
         document: null,
         state: "error",
         conflicted,
+        unavailable: false,
       };
     }
 
@@ -96,6 +100,16 @@ async function performSync(documentId: string): Promise<LocalSyncResult> {
         document: (await db.documents.get(documentId)) ?? null,
         state: "error",
         conflicted,
+        unavailable: false,
+      };
+    }
+
+    if (response.status === 404) {
+      return {
+        document: (await db.documents.get(documentId)) ?? null,
+        state: "error",
+        conflicted,
+        unavailable: true,
       };
     }
 
@@ -106,6 +120,7 @@ async function performSync(documentId: string): Promise<LocalSyncResult> {
         document: (await db.documents.get(documentId)) ?? null,
         state: "error",
         conflicted,
+        unavailable: false,
       };
     }
 
@@ -120,6 +135,7 @@ async function performSync(documentId: string): Promise<LocalSyncResult> {
         document: (await db.documents.get(documentId)) ?? null,
         state: "error",
         conflicted,
+        unavailable: false,
       };
     }
 
@@ -132,6 +148,7 @@ async function performSync(documentId: string): Promise<LocalSyncResult> {
         document: (await db.documents.get(documentId)) ?? null,
         state: "error",
         conflicted,
+        unavailable: false,
       };
     }
 
@@ -154,6 +171,7 @@ async function performSync(documentId: string): Promise<LocalSyncResult> {
         document: reconciliation.document,
         state: reconciliation.document?.dirty ? "pending" : "synced",
         conflicted,
+        unavailable: false,
       };
     }
   }
@@ -164,6 +182,7 @@ async function performSync(documentId: string): Promise<LocalSyncResult> {
     document,
     state: document?.dirty ? "pending" : "synced",
     conflicted,
+    unavailable: false,
   };
 }
 

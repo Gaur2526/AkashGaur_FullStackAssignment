@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import {
   canEditDocument,
@@ -29,7 +29,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
   const membership = await getDocumentMembership(user.id, id);
 
   if (!membership) {
-    notFound();
+    redirect("/dashboard");
   }
 
   const { document } = membership;

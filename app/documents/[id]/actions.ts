@@ -29,7 +29,6 @@ export type UpdateMemberRoleState = {
 
 export type DeleteDocumentState = {
   error?: string;
-  success?: boolean;
 };
 
 export async function addMemberAction(
@@ -233,8 +232,7 @@ export async function deleteDocumentStateAction(
   });
 
   revalidatePath("/dashboard");
-
-  return { success: true };
+  redirect("/dashboard");
 }
 
 export async function restoreVersionAction(formData: FormData) {

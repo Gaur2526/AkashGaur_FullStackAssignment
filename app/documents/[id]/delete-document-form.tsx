@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useActionState } from "react";
 import {
   deleteDocumentStateAction,
@@ -15,18 +13,10 @@ type DeleteDocumentFormProps = {
 const initialState: DeleteDocumentState = {};
 
 export function DeleteDocumentForm({ documentId }: DeleteDocumentFormProps) {
-  const router = useRouter();
   const [state, formAction, pending] = useActionState(
     deleteDocumentStateAction,
     initialState,
   );
-
-  useEffect(() => {
-    if (state.success) {
-      router.replace("/dashboard");
-      router.refresh();
-    }
-  }, [state.success, router]);
 
   return (
     <form action={formAction} className="space-y-2">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConnectionStatus } from "@/components/documents/connection-status";
 import {
@@ -28,6 +29,7 @@ export function DocumentEditor({
   currentUserLabel,
   canEdit,
 }: DocumentEditorProps) {
+  const router = useRouter();
   const [content, setContent] = useState(serverContent);
   const [ready, setReady] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
@@ -43,6 +45,11 @@ export function DocumentEditor({
     setSyncStatus(navigator.onLine ? "syncing" : "pending");
 
     const result = await syncLocalDocument(documentId);
+
+    if (result.unavailable) {
+      router.replace("/dashboard");
+      return;
+    }
 
     const syncedDocument = result.document;
 
@@ -62,7 +69,7 @@ export function DocumentEditor({
     } else {
       setSyncStatus(result.state);
     }
-  }, [documentId]);
+  }, [documentId, router]);
 
   useEffect(() => {
     let cancelled = false;
